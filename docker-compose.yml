@@ -1,0 +1,20 @@
+version: "3.9"
+
+services:
+  # Self-hosted Cobalt instance — handles YouTube anti-bot detection
+  cobalt-api:
+    image: ghcr.io/imputnet/cobalt:latest
+    container_name: cobalt-api
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    environment:
+      - API_PORT=9000
+      - API_URL=http://localhost:9000
+      # Disable rate limiting for self-hosted use
+      - RATELIMIT_MAX=0
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
