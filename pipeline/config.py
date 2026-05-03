@@ -21,10 +21,11 @@ YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY", "")
 # Region code for trending (ISO 3166-1 alpha-2)
 REGION_CODE = os.environ.get("REGION_CODE", "US")
 
-# Video category ID (default: Entertainment=24)
+# Video category ID (default: Gaming=20, best for long-form content)
 # Common: 1=Film, 10=Music, 17=Sports, 20=Gaming, 22=People&Blogs,
 #          23=Comedy, 24=Entertainment, 25=News, 27=Education, 28=Science
-VIDEO_CATEGORY_ID = os.environ.get("VIDEO_CATEGORY_ID", "24")
+# Note: Entertainment (24) trending is mostly short-form (<2min), not useful
+VIDEO_CATEGORY_ID = os.environ.get("VIDEO_CATEGORY_ID", "20")
 
 # Min/max duration in seconds for source videos
 MIN_DURATION_S = int(os.environ.get("MIN_DURATION_S", "300"))    # 5 min

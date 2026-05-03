@@ -45,12 +45,33 @@ cp .env.example .env
 # Edit .env and add your YOUTUBE_API_KEY
 ```
 
-### 3. Start Cobalt (YouTube downloader)
+### 3. Set Up Cobalt (YouTube downloader)
 
+Cobalt requires YouTube cookies to download videos (YouTube blocks unauthenticated server-side downloads).
+
+**One-time cookie setup:**
 ```bash
+# 1. Clone Cobalt repo to generate cookies
+git clone https://github.com/imputnet/cobalt /tmp/cobalt
+cd /tmp/cobalt/api && npm install
+
+# 2. Generate YouTube cookies (use a throwaway Google account!)
+#    This opens a browser flow — follow the on-screen instructions
+npm run token:youtube
+
+# 3. Copy the generated cookies.json to your pipeline directory
+cp cookies.json /path/to/auto-shorts-pipeline/cookies.json
+```
+
+**Start Cobalt:**
+```bash
+cd /path/to/auto-shorts-pipeline
 docker compose up -d
 # Cobalt API will be available at http://localhost:9000
+# Verify: curl http://localhost:9000/ | python3 -c "import sys,json; print(json.load(sys.stdin)['cobalt']['version'])"
 ```
+
+> **⚠️ Without cookies.json, YouTube downloads will fail** with `error.api.youtube.login`. The rest of the pipeline (scout, clipping) still works.
 
 ### 4. Run the Pipeline
 
@@ -84,7 +105,7 @@ All settings via environment variables (see `.env.example`):
 |----------|---------|-------------|
 | `YOUTUBE_API_KEY` | *required* | Free API key from Google Cloud Console |
 | `REGION_CODE` | `US` | Trending region (US, ID, GB, etc.) |
-| `VIDEO_CATEGORY_ID` | `24` | YouTube category (24=Entertainment, 20=Gaming, 10=Music) |
+| `VIDEO_CATEGORY_ID` | `20` | YouTube category (20=Gaming, 22=People&Blogs — best for long-form) |
 | `MIN_DURATION_S` | `300` | Min source video length (5 min) |
 | `MAX_DURATION_S` | `3600` | Max source video length (60 min) |
 | `CLIPS_PER_VIDEO` | `3` | Shorts to generate per video |
@@ -127,18 +148,19 @@ All settings via environment variables (see `.env.example`):
 
 ## YouTube Category IDs
 
-| ID | Category |
-|----|----------|
-| 1  | Film & Animation |
-| 10 | Music |
-| 17 | Sports |
-| 20 | Gaming |
-| 22 | People & Blogs |
-| 23 | Comedy |
-| 24 | Entertainment |
-| 25 | News & Politics |
-| 27 | Education |
-| 28 | Science & Technology |
+| ID | Category | Long-form trending? |
+|----|----------|--------------------|
+| 20 | Gaming | ✅ Best (37/49 videos are 5-60min) |
+| 22 | People & Blogs | ✅ Great (34/50 are long-form) |
+| 0  | All | ✅ Good (11/49 are long-form) |
+| 17 | Sports | ⚠️ Few (2/50 are long-form) |
+| 10 | Music | ⚠️ Few (5/30 are long-form) |
+| 24 | Entertainment | ❌ None (all <2min, max=124s) |
+| 1  | Film & Animation | — |
+| 23 | Comedy | — |
+| 25 | News & Politics | — |
+| 27 | Education | — |
+| 28 | Science & Technology | — |
 
 ## Powered By
 
