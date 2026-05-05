@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  # Self-hosted Cobalt instance — handles YouTube anti-bot detection
+  # NOTE: YouTube requires cookies. See README for setup instructions.
+  cobalt-api:
+    image: ghcr.io/imputnet/cobalt:latest
+    container_name: cobalt-api
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    volumes:
+      # Mount YouTube cookies file (create with: npm run token:youtube)
+      # See README "Cobalt Cookie Setup" section for instructions
+      - ./cookies.json:/cookies.json:ro
+    environment:
+      - API_PORT=9000
+      - API_URL=http://localhost:9000
+      # Path to YouTube cookies inside the container
+      - COOKIE_PATH=/cookies.json
+      # Disable rate limiting for self-hosted use
+      - RATELIMIT_MAX=0
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
