@@ -54,6 +54,19 @@ SAFETY_GAMMA = 0.97
 SAFETY_AUDIO_SR = 44100
 
 
+def _escape_filter_path(path: str) -> str:
+    """Escape a file path for use inside an ffmpeg filter argument.
+
+    Handles Windows drive letters (C:) and backslashes that would
+    otherwise break ffmpeg's filter-graph parser.
+    """
+    return (
+        path.replace("\\", "/")
+        .replace(":", "\\:")
+        .replace("'", "\\'")
+    )
+
+
 @dataclass
 class ClipResult:
     path: str
@@ -205,12 +218,7 @@ def build_video_filter(
         )
 
     if subtitle_file:
-        # ffmpeg subtitle filter wants escaping for ':', '\\' and '['.
-        sub_arg = (
-            subtitle_file.replace("\\", "\\\\")
-            .replace(":", "\\:")
-            .replace("'", "\\'")
-        )
+        sub_arg = _escape_filter_path(subtitle_file)
         parts.append(f"subtitles='{sub_arg}'")
 
     if safety_boost:
@@ -223,7 +231,7 @@ def build_video_filter(
     cta_start = max(0.0, out_len - 2.5)
 
     font_file = _pick_font()
-    font_arg = f":fontfile={font_file}" if font_file else ""
+    font_arg = f":fontfile={_escape_filter_path(font_file)}" if font_file else ""
 
     # Hook may be split across multiple lines; render each as its own
     # individually-centered drawtext, stacked vertically. ffmpeg 4.4 doesn't
@@ -234,7 +242,7 @@ def build_video_filter(
     for i, hf in enumerate(hook_files):
         y = base_y + i * line_height
         parts.append(
-            f"drawtext=textfile={hf}"
+            f"drawtext=textfile={_escape_filter_path(hf)}"
             f"{font_arg}"
             f":fontcolor=white:fontsize={hook_fontsize}:borderw=6:bordercolor=black"
             f":box=1:boxcolor=black@0.45:boxborderw=20"
@@ -243,7 +251,7 @@ def build_video_filter(
         )
 
     cta_draw = (
-        f"drawtext=textfile={cta_file}"
+        f"drawtext=textfile={_escape_filter_path(cta_file)}"
         f"{font_arg}"
         f":fontcolor=white:fontsize=58:borderw=4:bordercolor=black"
         f":box=1:boxcolor=black@0.55:boxborderw=18"
