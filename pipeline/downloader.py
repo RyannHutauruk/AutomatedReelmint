@@ -38,7 +38,8 @@ def download_via_ytdlp(
         "yt-dlp",
         "--no-playlist",
         "--no-warnings",
-        "-f", "best[ext=mp4][height<=1080]/best[ext=mp4]/best",
+        "-f", "bestvideo[height<=1080]+bestaudio/best",
+        "--merge-output-format", "mp4",
         "-o", str(out_path),
         video_url,
     ]
