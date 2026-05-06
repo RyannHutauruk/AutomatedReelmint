@@ -55,6 +55,7 @@ def download_via_ytdlp(
         cmd = [
             "yt-dlp",
             "--no-playlist",
+            "--remote-components", "ejs:github",
             *fmt_args,
             "-o", str(out_path),
             *cookie_args,
