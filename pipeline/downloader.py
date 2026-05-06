@@ -34,46 +34,55 @@ def download_via_ytdlp(
         log.info("Already downloaded: %s", out_path)
         return out_path
 
-    cmd = [
-        "yt-dlp",
-        "--no-playlist",
-        "--no-warnings",
-        "-f", "bestvideo[height<=1080]+bestaudio/best",
-        "--merge-output-format", "mp4",
-        "-o", str(out_path),
-        video_url,
-    ]
-
     # Use cookies file for YouTube authentication
     cf = cookies_file or COOKIES_FILE
+    cookie_args = []
     if cf and Path(cf).exists():
-        cmd.extend(["--cookies", cf])
+        cookie_args = ["--cookies", cf]
         log.info("Using cookies file: %s", cf)
 
-    try:
-        log.info("yt-dlp downloading: %s", video_url[:80])
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
-        if proc.returncode != 0:
-            log.warning("yt-dlp failed: %s", proc.stderr[-500:])
+    # Try multiple format strategies (first success wins)
+    format_attempts = [
+        # 1. Best quality with merge (requires ffmpeg)
+        ["-f", "bestvideo[height<=1080]+bestaudio/best", "--merge-output-format", "mp4"],
+        # 2. Sort-based selection (more robust, still needs ffmpeg for merge)
+        ["-S", "height:1080", "--merge-output-format", "mp4"],
+        # 3. Pre-merged format only (no ffmpeg needed, lower quality)
+        ["-f", "best[height<=1080]/best"],
+    ]
+
+    for i, fmt_args in enumerate(format_attempts, 1):
+        cmd = [
+            "yt-dlp",
+            "--no-playlist",
+            *fmt_args,
+            "-o", str(out_path),
+            *cookie_args,
+            video_url,
+        ]
+
+        try:
+            log.info("yt-dlp attempt %d/%d: %s", i, len(format_attempts), video_url[:80])
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+            if proc.returncode == 0 and out_path.exists():
+                log.info("yt-dlp downloaded: %s (%.1f MB)", out_path.name, out_path.stat().st_size / 1e6)
+                return out_path
+            # Check for file with different extension
+            if proc.returncode == 0:
+                for f in out_dir.glob(f"{video_id}.*"):
+                    if f.suffix.lower() in {".mp4", ".mkv", ".webm", ".mov"}:
+                        return f
+            stderr = proc.stderr[-500:] if proc.stderr else ""
+            log.warning("yt-dlp attempt %d failed: %s", i, stderr)
             out_path.unlink(missing_ok=True)
-            return None
-        if out_path.exists():
-            log.info("yt-dlp downloaded: %s (%.1f MB)", out_path.name, out_path.stat().st_size / 1e6)
-            return out_path
-        # yt-dlp might have chosen a different extension
-        for f in out_dir.glob(f"{video_id}.*"):
-            if f.suffix.lower() in {".mp4", ".mkv", ".webm", ".mov"}:
-                return f
-        log.warning("yt-dlp produced no output file")
-        return None
-    except subprocess.TimeoutExpired:
-        log.error("yt-dlp timed out for %s", video_url[:80])
-        out_path.unlink(missing_ok=True)
-        return None
-    except Exception as e:
-        log.error("yt-dlp error: %s", e)
-        out_path.unlink(missing_ok=True)
-        return None
+        except subprocess.TimeoutExpired:
+            log.error("yt-dlp timed out for %s", video_url[:80])
+            out_path.unlink(missing_ok=True)
+        except Exception as e:
+            log.error("yt-dlp error: %s", e)
+            out_path.unlink(missing_ok=True)
+
+    return None
 
 
 def download_via_cobalt(video_url: str, output_dir: Path | None = None) -> Path | None:
