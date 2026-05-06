@@ -34,8 +34,13 @@ MAX_DURATION_S = int(os.environ.get("MAX_DURATION_S", "3600"))   # 60 min
 # How many trending videos to fetch per run
 MAX_TRENDING_RESULTS = int(os.environ.get("MAX_TRENDING_RESULTS", "20"))
 
-# ── Cobalt ───────────────────────────────────────────────────────────
-COBALT_API_URL = os.environ.get("COBALT_API_URL", "http://localhost:9000")
+# ── Download ─────────────────────────────────────────────────────────
+# Path to cookies.txt file (Netscape format) for YouTube authentication
+# Export from your browser using a cookie extension while logged into YouTube
+COOKIES_FILE = os.environ.get("COOKIES_FILE", "")
+
+# Cobalt API (optional, used as fallback if configured)
+COBALT_API_URL = os.environ.get("COBALT_API_URL", "")
 
 # ── Clipping ─────────────────────────────────────────────────────────
 CLIPS_PER_VIDEO = int(os.environ.get("CLIPS_PER_VIDEO", "3"))
