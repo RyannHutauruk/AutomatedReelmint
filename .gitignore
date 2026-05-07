@@ -14,3 +14,14 @@ samples/*.mp4
 data/
 output/
 *.mp4
+
+# Auto Stream
+autostream/db/autostream.db
+credentials/*.json
+library/**/*.wav
+library/**/*.mp3
+library/**/*.flac
+visuals/**/*.mp4
+visuals/**/*.mkv
+dashboard/node_modules/
+dashboard/build/
