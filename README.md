@@ -174,6 +174,93 @@ All settings via environment variables (see `.env.example`):
 | 10 | Music | Few (5/30 are long-form) |
 | 24 | Entertainment | None (all <2min) |
 
+---
+
+# YouTube Auto Stream System
+
+24/7 automated YouTube live streaming of music content across multiple channels. Manages music generation, visual creation, and continuous streaming from a single dashboard.
+
+## Quick Start (Auto Stream)
+
+### Prerequisites
+- Python 3.12+, ffmpeg, Node.js 18+ (for dashboard)
+
+### Backend Setup
+```bash
+cd AutomatedReelmint
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r autostream/requirements.txt
+
+# Start the API server
+uvicorn autostream.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+### Dashboard Setup
+```bash
+cd dashboard
+npm install
+npm start          # Dev server at http://localhost:3000
+# or
+npm run build      # Production build (served by FastAPI)
+```
+
+### How It Works
+1. **Add channels** via the dashboard — each has its own stream key, music folder, visual folder, genre, and schedule
+2. **Populate libraries** — drop audio files in `library/<genre>/` and video loops in `visuals/<theme>/`
+3. **Start streaming** — the engine randomly picks music + visuals, merges them with ffmpeg, and pushes RTMP to YouTube
+4. **Auto-rotation** — when a song ends, the next one plays automatically; titles rotate via YouTube API
+
+### Architecture
+```
+┌──────────────────────────────────────────────────┐
+│           Dashboard (React)                       │
+│  Channels │ Stream Control │ Library │ Logs       │
+└────────────────────┬─────────────────────────────┘
+                     │ REST API
+┌────────────────────▼─────────────────────────────┐
+│           Backend (FastAPI)                        │
+│  stream_engine/ │ youtube_api/ │ generators/       │
+│  scheduler/     │ db/          │ api/              │
+└────────────────────┬─────────────────────────────┘
+                     │ ffmpeg RTMP
+                     ▼
+            YouTube Live Stream
+```
+
+### API Endpoints
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/channels` | GET/POST | List / create channels |
+| `/api/channels/{id}` | GET/PUT/DELETE | Manage channel |
+| `/api/channels/{id}/start` | POST | Start streaming |
+| `/api/channels/{id}/stop` | POST | Stop streaming |
+| `/api/library/music/{genre}` | GET | List tracks |
+| `/api/library/visuals/{theme}` | GET | List visuals |
+| `/api/generators/music/generate` | POST | Trigger music generation |
+| `/api/generators/visuals/generate` | POST | Trigger visual generation |
+| `/api/logs/stream` | GET | Stream logs |
+| `/api/health` | GET | System status |
+
+### File Structure
+```
+autostream/
+  main.py              ← FastAPI app entry
+  config.py            ← Global configuration
+  api/                 ← REST endpoints
+  stream_engine/       ← ffmpeg RTMP controller
+  youtube_api/         ← OAuth2 + broadcast management
+  generators/          ← Music & visual generators
+  scheduler/           ← APScheduler cron jobs
+  db/                  ← SQLite models
+dashboard/             ← React UI
+library/               ← Music files by genre
+visuals/               ← Video loops by theme
+credentials/           ← OAuth tokens per channel
+config.json            ← App settings
+```
+
+---
+
 ## Powered By
 
 - [Reelmint](https://github.com/RyannHutauruk/video-momentum-clipper) — Video clipping engine

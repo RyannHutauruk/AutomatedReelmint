@@ -1,0 +1,11 @@
+{
+  "app_name": "YouTube Auto Stream",
+  "version": "1.0.0",
+  "default_rtmp_url": "rtmp://a.rtmp.youtube.com/live2",
+  "video_bitrate": "2500k",
+  "audio_bitrate": "128k",
+  "resolution": "1920x1080",
+  "fps": 30,
+  "music_gen_interval_hours": 24,
+  "visual_gen_interval_hours": 24
+}
